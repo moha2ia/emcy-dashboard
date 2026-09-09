@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Builds
+client/dist/
+
+# Environment & secrets
+server/.env
+.env.local
+
+# Database & backups (live data never goes to git)
+server/data/
+.data/
+
+# Uploaded files (keep folder placeholders)
+server/uploads/avatars/*
+server/uploads/work/*
+!server/uploads/avatars/.gitkeep
+!server/uploads/work/.gitkeep
+
+# Logs & pid files
+*.log
+*.log.err
+server-pid.txt
+vite-pid.txt
+
+# Tooling / local
+.freebuff/
+.DS_Store
+Thumbs.db
+
+# Local documents & logs (not part of the app; member data must not go to git)
+resourses/
+*.pdf
+*.xlsx
+logo emcy v2.png
+server-log.txt
+vite-log.txt
