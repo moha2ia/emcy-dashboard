@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
-const { db } = require('../config/db');
+const { dbReady } = require('../config/db');
 
 /**
  * Verify JWT token and attach user to request
  */
-function auth(req, res, next) {
+async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,6 +15,7 @@ function auth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const db = await dbReady;
     const user = db.get('users').find({ id: decoded.id }).value();
 
     if (!user) {

@@ -1,0 +1,26 @@
+[build]
+  command = "npm install --prefix client && npm run build --prefix client && npm install --prefix server --omit=dev"
+  functions = "netlify/functions"
+  publish = "client/dist"
+
+[functions]
+  node_bundler = "esbuild"
+
+# API + uploads go to the Express app running as a Netlify function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "/.netlify/functions/api/uploads/:splat"
+  status = 200
+  force = true
+
+# SPA fallback — every other path serves the React app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

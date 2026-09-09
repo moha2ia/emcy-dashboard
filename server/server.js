@@ -16,14 +16,18 @@ if (dotenvResult.error) {
 }
 
 const { seedAdmin, seedDemoData } = require('./config/db');
-const { UPLOADS_DIR, SERVER_ROOT } = require('./config/paths');
+const { UPLOADS_DIR, SERVER_ROOT, DRIVER, ON_NETLIFY } = require('./config/store');
+const { readUpload } = require('./config/store');
 const requestLogger = require('./middleware/logger');
 
 const app = express();
 
-// Ensure upload directories exist (multer fails hard if they don't)
-for (const dir of ['', 'avatars', 'work']) {
-  fs.mkdirSync(path.join(UPLOADS_DIR, dir), { recursive: true });
+// Ensure upload directories exist for the local filesystem driver (multer
+// used to fail hard if they were missing; blob storage needs nothing).
+if (DRIVER === 'fs') {
+  for (const dir of ['', 'avatars', 'work']) {
+    fs.mkdirSync(path.join(UPLOADS_DIR, dir), { recursive: true });
+  }
 }
 
 // Middleware
@@ -35,7 +39,20 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(requestLogger);
-app.use('/uploads', express.static(path.join(UPLOADS_DIR)));
+
+// Uploaded files: served straight from the filesystem locally, streamed out
+// of the blobs store on Netlify (where /uploads/* has no disk behind it).
+if (DRIVER === 'fs') {
+  app.use('/uploads', express.static(path.join(UPLOADS_DIR)));
+} else {
+  app.get('/uploads/*', async (req, res) => {
+    const key = req.params[0];
+    const data = await readUpload(key);
+    if (!data) return res.status(404).json({ message: 'File not found.' });
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.end(Buffer.from(data));
+  });
+}
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -79,18 +96,25 @@ app.use((err, req, res, next) => {
 
 const PORT = Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 5000;
 
-async function start() {
-  await seedAdmin();
-  await seedDemoData();
-  app.listen(PORT, () => {
-    if (process.env.NODE_ENV === 'production') {
-      console.log(`\n🚀 EMCY Dashboard running on port ${PORT} (API + web app)`);
-    } else {
-      console.log(`\n🚀 EMCY Dashboard API running on http://localhost:${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/api/health\n`);
-      console.log('Default login: admin@emcy.com / admin123\n');
-    }
-  });
+// On Netlify the function handler seeds on cold start and exports the app;
+// the express server is NOT started there.
+if (!ON_NETLIFY) {
+  async function start() {
+    await seedAdmin();
+    await seedDemoData();
+    app.listen(PORT, () => {
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`\n🚀 EMCY Dashboard running on port ${PORT} (API + web app) [store: ${DRIVER}]`);
+      } else {
+        console.log(`\n🚀 EMCY Dashboard API running on http://localhost:${PORT} [store: ${DRIVER}]`);
+        console.log(`📊 Health check: http://localhost:${PORT}/api/health\n`);
+        console.log('Default login: admin@emcy.com / admin123\n');
+      }
+    });
+  }
+
+  start();
 }
 
-start();
+// Serverless entry point (netlify/functions/api.js)
+module.exports = { app, seedAdmin, seedDemoData };

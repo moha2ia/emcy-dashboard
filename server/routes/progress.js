@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { db } = require('../config/db');
+const { dbReady } = require('../config/db');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // GET /api/progress — List progress entries with optional filters
-router.get('/', auth, (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     let results = db.get('weeklyProgress').value();
     const { userId, weekNumber } = req.query;
     if (userId) results = results.filter((p) => p.userId === userId);
@@ -21,8 +22,9 @@ router.get('/', auth, (req, res) => {
 });
 
 // GET /api/progress/stats — Aggregate statistics for dashboard
-router.get('/stats', auth, (req, res) => {
+router.get('/stats', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const allProgress = db.get('weeklyProgress').value();
     const allMembers = db.get('users').filter({ role: 'member' }).value();
     const totalMembers = allMembers.length;
@@ -84,8 +86,9 @@ router.get('/stats', auth, (req, res) => {
 });
 
 // GET /api/progress/tracker — Full weekly tracker grid with task details
-router.get('/tracker', auth, (req, res) => {
+router.get('/tracker', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const allProgress = db.get('weeklyProgress').value();
     const allLogs = db.get('workLogs').value();
     let members = db.get('users').filter({ role: 'member' }).value();
@@ -140,8 +143,9 @@ router.get('/tracker', auth, (req, res) => {
 
 
 // POST /api/progress — Record weekly progress (admin only)
-router.post('/', auth, adminOnly, (req, res) => {
+router.post('/', auth, adminOnly, async (req, res) => {
   try {
+    const db = await dbReady;
     const { userId, weekNumber, status, note } = req.body;
     if (!userId || !weekNumber || !status) return res.status(400).json({ message: 'userId, weekNumber, and status are required.' });
     if (!['done', 'not_done'].includes(status)) return res.status(400).json({ message: 'Status must be "done" or "not_done".' });
@@ -151,7 +155,7 @@ router.post('/', auth, adminOnly, (req, res) => {
     if (existing) return res.status(400).json({ message: 'Entry already exists. Use PUT to update.' });
 
     const newProgress = { id: uuidv4(), userId, weekNumber: parseInt(weekNumber), status, note: note || '', date: new Date().toISOString(), createdAt: new Date().toISOString() };
-    db.get('weeklyProgress').push(newProgress).write();
+    await db.get('weeklyProgress').push(newProgress).write();
     res.status(201).json({ message: 'Progress recorded.', progress: newProgress });
   } catch (error) {
     console.error('Create progress error:', error);
@@ -160,8 +164,9 @@ router.post('/', auth, adminOnly, (req, res) => {
 });
 
 // PUT /api/progress/:id — Update a progress entry (admin only)
-router.put('/:id', auth, adminOnly, (req, res) => {
+router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
+    const db = await dbReady;
     const { id } = req.params;
     const { status, note } = req.body;
     const entry = db.get('weeklyProgress').find({ id }).value();
@@ -169,7 +174,7 @@ router.put('/:id', auth, adminOnly, (req, res) => {
     const updates = { updatedAt: new Date().toISOString() };
     if (status && ['done', 'not_done'].includes(status)) updates.status = status;
     if (note !== undefined) updates.note = note;
-    db.get('weeklyProgress').find({ id }).assign(updates).write();
+    await db.get('weeklyProgress').find({ id }).assign(updates).write();
     res.json({ message: 'Progress updated.', progress: db.get('weeklyProgress').find({ id }).value() });
   } catch (error) {
     console.error('Update progress error:', error);
@@ -178,20 +183,21 @@ router.put('/:id', auth, adminOnly, (req, res) => {
 });
 
 // PUT /api/progress/toggle/:userId/:weekNumber — Quick toggle (admin only)
-router.put('/toggle/:userId/:weekNumber', auth, adminOnly, (req, res) => {
+router.put('/toggle/:userId/:weekNumber', auth, adminOnly, async (req, res) => {
   try {
+    const db = await dbReady;
     const { userId, weekNumber } = req.params;
     const weekNum = parseInt(weekNumber);
     let entry = db.get('weeklyProgress').find({ userId, weekNumber: weekNum }).value();
 
     if (entry) {
       const newStatus = entry.status === 'done' ? 'not_done' : 'done';
-      db.get('weeklyProgress').find({ id: entry.id }).assign({ status: newStatus, updatedAt: new Date().toISOString() }).write();
+      await db.get('weeklyProgress').find({ id: entry.id }).assign({ status: newStatus, updatedAt: new Date().toISOString() }).write();
       entry = db.get('weeklyProgress').find({ id: entry.id }).value();
       res.json({ message: `Toggled to ${newStatus}.`, progress: entry });
     } else {
       const np = { id: uuidv4(), userId, weekNumber: weekNum, status: 'done', note: '', date: new Date().toISOString(), createdAt: new Date().toISOString() };
-      db.get('weeklyProgress').push(np).write();
+      await db.get('weeklyProgress').push(np).write();
       res.status(201).json({ message: 'Created as done.', progress: np });
     }
   } catch (error) {
@@ -201,12 +207,13 @@ router.put('/toggle/:userId/:weekNumber', auth, adminOnly, (req, res) => {
 });
 
 // DELETE /api/progress/:id — Delete entry (admin only)
-router.delete('/:id', auth, adminOnly, (req, res) => {
+router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
+    const db = await dbReady;
     const { id } = req.params;
     const entry = db.get('weeklyProgress').find({ id }).value();
     if (!entry) return res.status(404).json({ message: 'Not found.' });
-    db.get('weeklyProgress').remove({ id }).write();
+    await db.get('weeklyProgress').remove({ id }).write();
     res.json({ message: 'Deleted.' });
   } catch (error) {
     console.error('Delete error:', error);

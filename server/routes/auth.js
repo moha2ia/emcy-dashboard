@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { db } = require('../config/db');
+const { dbReady } = require('../config/db');
 const { auth, adminOnly, ownerOnly, isOwner } = require('../middleware/auth');
 const { validateEmcyEmail } = require('../utils/emcyEmail');
 
@@ -13,6 +13,7 @@ const { validateEmcyEmail } = require('../utils/emcyEmail');
  */
 router.post('/register', auth, adminOnly, async (req, res) => {
   try {
+    const db = await dbReady;
     const { name, email, password, role, project, avatar, joinDate, skills } = req.body;
 
     // Validation
@@ -58,7 +59,7 @@ router.post('/register', auth, adminOnly, async (req, res) => {
       createdAt: new Date().toISOString(),
     };
 
-    db.get('users').push(newUser).write();
+    await db.get('users').push(newUser).write();
 
     const { password: _, ...userResponse } = newUser;
     res.status(201).json({ message: 'User registered successfully.', user: userResponse });
@@ -74,6 +75,7 @@ router.post('/register', auth, adminOnly, async (req, res) => {
  */
 router.post('/login', async (req, res) => {
   try {
+    const db = await dbReady;
     const { email, password } = req.body;
 
     if (!email || !password) {

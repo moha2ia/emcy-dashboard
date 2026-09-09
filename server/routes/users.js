@@ -4,24 +4,15 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
-const { UPLOADS_DIR } = require('../config/paths');
-const { db } = require('../config/db');
+const store = require('../config/store');
+const { dbReady } = require('../config/db');
 const { auth, adminOnly, isOwner } = require('../middleware/auth');
 const { validateEmcyEmail } = require('../utils/emcyEmail');
 
-// Multer storage configuration (relative to the server directory, not CWD)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(UPLOADS_DIR, 'avatars'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
+// Files are held in memory only, then persisted through the storage driver
+// (filesystem locally, Netlify Blobs in production).
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|webp/;
@@ -38,11 +29,13 @@ const upload = multer({
  * POST /api/users/upload
  * Upload a profile image and return the path
  */
-router.post('/upload', auth, upload.single('avatar'), (req, res) => {
+router.post('/upload', auth, upload.single('avatar'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded.' });
   }
-  const filePath = `/uploads/avatars/${req.file.filename}`;
+  const filename = 'avatar-' + Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(req.file.originalname);
+  await store.saveUpload('avatars', filename, req.file.buffer);
+  const filePath = `/uploads/avatars/${filename}`;
   res.json({ message: 'File uploaded successfully.', path: filePath });
 });
 
@@ -50,8 +43,9 @@ router.post('/upload', auth, upload.single('avatar'), (req, res) => {
  * GET /api/users
  * List all users (admin sees all, members see limited info)
  */
-router.get('/', auth, (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     let users = db.get('users').value();
 
     // Strip passwords
@@ -90,8 +84,9 @@ router.get('/', auth, (req, res) => {
  * GET /api/users/ranking
  * Get members ranked by number of tasks completed (descending)
  */
-router.get('/ranking', auth, (req, res) => {
+router.get('/ranking', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const members = db.get('users').filter({ role: 'member' }).value();
     const tasks = db.get('tasks').value();
 
@@ -118,8 +113,9 @@ router.get('/ranking', auth, (req, res) => {
  * GET /api/users/:id
  * Get a single user by ID
  */
-router.get('/:id', auth, (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const user = db.get('users').find({ id: req.params.id }).value();
 
     if (!user) {
@@ -159,6 +155,7 @@ router.get('/:id', auth, (req, res) => {
  */
 router.put('/:id', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const { id } = req.params;
 
     // Only admin or the user themselves can update
@@ -216,7 +213,7 @@ router.put('/:id', auth, async (req, res) => {
       updates.password = await bcrypt.hash(password, salt);
     }
 
-    db.get('users').find({ id }).assign(updates).write();
+    await db.get('users').find({ id }).assign(updates).write();
 
     const updatedUser = db.get('users').find({ id }).value();
     const { password: _, ...userResponse } = updatedUser;
@@ -232,8 +229,9 @@ router.put('/:id', auth, async (req, res) => {
  * DELETE /api/users/:id
  * Delete a user (admin only)
  */
-router.delete('/:id', auth, adminOnly, (req, res) => {
+router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
+    const db = await dbReady;
     const { id } = req.params;
 
     const user = db.get('users').find({ id }).value();
@@ -252,8 +250,8 @@ router.delete('/:id', auth, adminOnly, (req, res) => {
     }
 
     // Delete user and their progress
-    db.get('users').remove({ id }).write();
-    db.get('weeklyProgress').remove({ userId: id }).write();
+    await db.get('users').remove({ id }).write();
+    await db.get('weeklyProgress').remove({ userId: id }).write();
 
     res.json({ message: 'User and related data deleted successfully.' });
   } catch (error) {

@@ -1,37 +1,35 @@
 const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
-const { backupDb } = require('./backup');
-const { DATA_DIR, DB_FILE } = require('./paths');
+const store = require('./store');
 
-// The data directory may point at a mounted disk in deployment — ensure it exists
-fs.mkdirSync(DATA_DIR, { recursive: true });
-
-const adapter = new FileSync(DB_FILE);
-const db = low(adapter);
-
-// Snapshot db.json before every write so any bad write can be rolled back
-const originalWrite = db.write.bind(db);
-db.write = (...args) => {
-  backupDb();
-  return originalWrite(...args);
-};
-
-// Set default database structure
-db.defaults({
+const DEFAULTS = {
   users: [],
   weeklyProgress: [],
   workLogs: [],
   tasks: [],
-}).write();
+};
+
+// With an async adapter (Netlify Blobs), low() resolves AFTER the first read,
+// so the db instance is only safe to touch once dbReady has resolved. The
+// `db` export is a getter: route modules capture it at load time but always
+// dereference it per-request, which is after the handler awaited dbReady.
+const state = { db: null };
+
+const dbReady = (async () => {
+  // The adapter snapshots a backup before every write (see store.js), so
+  // any bad write can be rolled back from data/backups or the blobs store.
+  const instance = await Promise.resolve(low(store.makeDbAdapter(DEFAULTS)));
+
+  state.db = instance;
+  return instance;
+})();
 
 /**
  * Seed a default admin user if none exists
  */
 async function seedAdmin() {
+  const db = await dbReady;
   const adminExists = db.get('users').find({ role: 'admin' }).value();
 
   if (!adminExists) {
@@ -52,8 +50,21 @@ async function seedAdmin() {
       createdAt: new Date().toISOString(),
     };
 
-    db.get('users').push(admin).write();
+    await db.get('users').push(admin).write();
     console.log(`✅ Default admin seeded: admin@emcy.com / ${initialPassword}`);
+  } else if (
+    process.env.ADMIN_SEED_PASSWORD &&
+    process.env.NODE_ENV === 'production' &&
+    (await bcrypt.compare('admin123', adminExists.password))
+  ) {
+    // Repair path: an earlier deploy seeded the owner with the well-known
+    // default before ADMIN_SEED_PASSWORD existed (the database persists
+    // across deploys). Upgrade it once — only fires while the password is
+    // still the default, so a deliberately chosen password is never touched.
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(process.env.ADMIN_SEED_PASSWORD, salt);
+    await db.get('users').find({ id: adminExists.id }).assign({ password: hashed }).write();
+    console.log('🔐 Owner password upgraded from the default to ADMIN_SEED_PASSWORD.');
   }
 }
 
@@ -63,6 +74,8 @@ async function seedAdmin() {
  */
 async function seedDemoData() {
   if (process.env.NODE_ENV === 'production') return;
+  const db = await dbReady;
+
   const memberCount = db.get('users').filter({ role: 'member' }).size().value();
 
   if (memberCount === 0) {
@@ -89,7 +102,7 @@ async function seedDemoData() {
         avatar: null,
         createdAt: new Date().toISOString(),
       };
-      db.get('users').push(user).write();
+      await db.get('users').push(user).write();
     }
 
     // Seed some weekly progress data (last 8 weeks)
@@ -108,7 +121,7 @@ async function seedDemoData() {
           note: '',
           createdAt: new Date().toISOString(),
         };
-        db.get('weeklyProgress').push(progress).write();
+        await db.get('weeklyProgress').push(progress).write();
       }
     }
 
@@ -116,4 +129,16 @@ async function seedDemoData() {
   }
 }
 
-module.exports = { db, seedAdmin, seedDemoData };
+module.exports = {
+  // Routes must call getDb() per request (after awaiting dbReady) — destructuring
+  // `db` at module-load time would capture the value before initialization.
+  getDb() {
+    return state.db;
+  },
+  get db() {
+    return state.db;
+  },
+  dbReady,
+  seedAdmin,
+  seedDemoData,
+};

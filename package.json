@@ -1,13 +1,8 @@
 {
-  "name": "emcy-dashboard-server",
+  "name": "emcy-dashboard",
   "version": "1.0.0",
-  "description": "EMCY Work Tracking System - Backend API",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "build": "npm ci --prefix ../client && npm run build --prefix ../client"
-  },
+  "private": true,
+  "description": "EMCY Dashboard — monorepo root (Netlify function host). Runtime deps live in server/; this root package exists so netlify/functions can resolve them.",
   "dependencies": {
     "@netlify/blobs": "^7.3.0",
     "bcryptjs": "^2.4.3",

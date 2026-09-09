@@ -1,25 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
-const { db } = require('../config/db');
+const { dbReady } = require('../config/db');
 const { auth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
-const { UPLOADS_DIR } = require('../config/paths');
+const store = require('../config/store');
 
-// Configure multer for work file uploads (relative to the server directory, not CWD)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(UPLOADS_DIR, 'work'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'work-' + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
+// Files are held in memory only, then persisted through the storage driver
+// (filesystem locally, Netlify Blobs in production).
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
@@ -27,8 +18,9 @@ const upload = multer({
  * GET /api/logs
  * Get work logs for a specific month or user
  */
-router.get('/', auth, (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const { userId, month, year } = req.query;
     // Members may only ever read their own logs
     const targetUserId = req.user.role === 'admin' ? (userId || req.user.id) : req.user.id;
@@ -50,8 +42,9 @@ router.get('/', auth, (req, res) => {
  * GET /api/logs/recent
  * Get latest logs from all users (Admin only)
  */
-router.get('/recent', auth, (req, res) => {
+router.get('/recent', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden.' });
     
     const logs = db.get('workLogs')
@@ -83,10 +76,13 @@ router.get('/recent', auth, (req, res) => {
  * POST /api/logs/upload
  * Upload a work file
  */
-router.post('/upload', auth, upload.single('workFile'), (req, res) => {
+router.post('/upload', auth, upload.single('workFile'), async (req, res) => {
   try {
+    const db = await dbReady;
     if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
-    const filePath = `/uploads/work/${req.file.filename}`;
+    const filename = 'work-' + Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(req.file.originalname);
+    await store.saveUpload('work', filename, req.file.buffer);
+    const filePath = `/uploads/work/${filename}`;
     res.json({ message: 'File uploaded successfully.', path: filePath, originalName: req.file.originalname });
   } catch (error) {
     console.error('Upload error:', error);
@@ -98,8 +94,9 @@ router.post('/upload', auth, upload.single('workFile'), (req, res) => {
  * POST /api/logs
  * Create or update a work log for a specific date
  */
-router.post('/', auth, (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
+    const db = await dbReady;
     const { date, status, note, userId, workLink } = req.body;
     if (!date || !status) return res.status(400).json({ message: 'Date and status are required.' });
     
@@ -114,7 +111,7 @@ router.post('/', auth, (req, res) => {
     };
 
     if (existingLog) {
-      db.get('workLogs').find({ id: existingLog.id }).assign(logData).write();
+      await db.get('workLogs').find({ id: existingLog.id }).assign(logData).write();
       return res.json({ message: 'Log updated.', log: db.get('workLogs').find({ id: existingLog.id }).value() });
     } else {
       const newLog = {
@@ -124,7 +121,7 @@ router.post('/', auth, (req, res) => {
         ...logData,
         createdAt: new Date().toISOString(),
       };
-      db.get('workLogs').push(newLog).write();
+      await db.get('workLogs').push(newLog).write();
       return res.json({ message: 'Log created.', log: newLog });
     }
   } catch (error) {
