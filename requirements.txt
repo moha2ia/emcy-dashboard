@@ -1,0 +1,11 @@
+# Python dependencies for EMCY Dashboard
+#
+# This project is primarily JavaScript (React client + Express server), so this
+# file is a starting point for any Python tooling or scripts you add later.
+#
+# Install with:  pip install -r requirements.txt
+# Pin versions:  pip freeze > requirements.txt  (once you have real deps)
+#
+# Examples (uncomment as needed):
+# requests==2.32.3
+# python-dotenv==1.0.1
