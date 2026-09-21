@@ -123,7 +123,7 @@ export default function TaskPage() {
               My Tasks
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: 2 }}>
-              Welcome, <span style={{ color: 'var(--accent-light)', fontWeight: 600 }}>{user?.name?.split(' ')[0]}</span> — submit your work when you're done.
+              Welcome, <span style={{ color: 'var(--accent-light)', fontWeight: 600 }}>{user?.name?.split(' ')[0]}</span> - submit your work when you're done.
             </p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function TaskPage() {
         </div>
       ) : (
         <>
-          {/* ── PENDING TASKS ─────────────────────────────── */}
+          {/* PENDING TASKS */}
           {pendingTasks.length > 0 && (
             <div style={{ marginBottom: 36 }}>
               <div style={{
@@ -255,7 +255,7 @@ export default function TaskPage() {
                       <div style={{ marginBottom: 20 }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
                           <LinkIcon size={12} style={{ display: 'inline', marginRight: 5 }} />
-                          Attach Work — Link or File <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span>
+                          Attach Work - Link or File <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span>
                         </label>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <input
@@ -333,7 +333,7 @@ export default function TaskPage() {
             </div>
           )}
 
-          {/* ── COMPLETED TASKS ───────────────────────────── */}
+          {/* COMPLETED TASKS */}
           {doneTasks.length > 0 && (
             <div>
               <div style={{

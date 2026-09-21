@@ -19,7 +19,7 @@ export default defineConfig([
     },
   },
   {
-    // Context providers export both a component and a hook — that's intentional.
+    // Context providers export both a component and a hook - that's intentional.
     files: ['src/context/**/*.{js,jsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',

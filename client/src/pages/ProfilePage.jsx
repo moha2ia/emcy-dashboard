@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getUser } from '../services/api';
+import { resolveUrl } from '../utils/resolveUrl';
 import { User, Briefcase, Mail, Calendar, Activity, Crown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -35,7 +36,7 @@ export default function ProfilePage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20 }}>
         {/* Left card */}
         <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-          <div className="avatar" style={{ width: 80, height: 80, fontSize: '2rem', background: profile.avatar ? `url(${profile.avatar}) center/cover` : `hsl(0, 0%, 30%)`, color: '#fff', margin: '0 auto 16px', border: '3px solid var(--accent)' }}>
+          <div className="avatar" style={{ width: 80, height: 80, fontSize: '2rem', background: profile.avatar ? `url(${resolveUrl(profile.avatar)}) center/cover` : `hsl(0, 0%, 30%)`, color: '#fff', margin: '0 auto 16px', border: '3px solid var(--accent)' }}>
             {!profile.avatar && profile.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
           </div>
           <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 4 }}>{profile.name}</h2>

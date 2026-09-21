@@ -23,7 +23,7 @@ export default function MembersPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // The EMCY Management admin is the Owner — only they manage admin accounts
+  // The EMCY Management admin is the Owner - only they manage admin accounts
   const isOwner = user?.role === 'admin' && (user?.project || '').trim().toLowerCase() === OWNER_MAJOR;
 
   // Live EMCY email validation for the add/edit form
@@ -229,7 +229,7 @@ export default function MembersPage() {
         )}
       </div>
 
-      {/* Administrators section — visible to everyone, manageable only by the Owner */}
+      {/* Administrators section - visible to everyone, manageable only by the Owner */}
       {admins.length > 0 && (
         <div style={{ marginBottom: 36 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -467,7 +467,7 @@ export default function MembersPage() {
                 </div>
               </div>
 
-              {/* Role management — Owner only (EMCY Management) */}
+              {/* Role management - Owner only (EMCY Management) */}
               {isOwner && (
                 <div style={{ marginBottom: 24 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-secondary)' }}>

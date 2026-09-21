@@ -6,7 +6,7 @@
  *  - The main system admin (admin@emcy.com) is left untouched.
  *  - Name parsing: first token = first name, last token = family name.
  *  - Collisions (two people mapping to the same address, or the address
- *    already taken by another account) get a numeric suffix: name2, name3…
+ *    already taken by another account) get a numeric suffix: name2, name3...
  *  - A dry-run prints the plan; pass --apply to write it.
  *
  * Usage: node scripts/migrate-emails.js [--apply]
@@ -48,7 +48,7 @@ const conflicts = [];
 for (const user of users) {
   if (KEEP_UNTOUCHED.includes(user.email.toLowerCase())) continue;
   if (user.email.toLowerCase().endsWith(`@${DOMAIN}`) && !user.email.toLowerCase().includes('gmail.com')) {
-    // Already on an @emcy.ma address — leave as-is unless it doesn't match the pattern
+    // Already on an @emcy.ma address - leave as-is unless it doesn't match the pattern
     const target = patternEmail(user.name);
     if (target && user.email.toLowerCase() === target) continue; // already correct
   }
@@ -72,7 +72,7 @@ for (const user of users) {
   taken.add(email);
 }
 
-console.log(`Migration plan — ${plan.length} account(s) to update:\n`);
+console.log(`Migration plan - ${plan.length} account(s) to update:\n`);
 for (const p of plan) {
   console.log(`  ${p.name} [${p.role}]`);
   console.log(`    ${p.from}  →  ${p.to}\n`);
@@ -93,4 +93,4 @@ backupDb(); // snapshot before touching data
 for (const p of plan) {
   db.get('users').find({ id: p.id }).assign({ email: p.to }).write();
 }
-console.log(`✅ Applied: ${plan.length} email(s) migrated. Backups are in data/backups/.`);
+console.log(`Applied: ${plan.length} email(s) migrated. Backups are in data/backups/.`);

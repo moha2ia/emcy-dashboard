@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { dbReady } = require('../config/db');
 const { auth, adminOnly } = require('../middleware/auth');
 
-// GET /api/progress — List progress entries with optional filters
+// GET /api/progress - List progress entries with optional filters
 router.get('/', auth, async (req, res) => {
   try {
     const db = await dbReady;
@@ -21,7 +21,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// GET /api/progress/stats — Aggregate statistics for dashboard
+// GET /api/progress/stats - Aggregate statistics for dashboard
 router.get('/stats', auth, async (req, res) => {
   try {
     const db = await dbReady;
@@ -85,7 +85,7 @@ router.get('/stats', auth, async (req, res) => {
   }
 });
 
-// GET /api/progress/tracker — Full weekly tracker grid with task details
+// GET /api/progress/tracker - Full weekly tracker grid with task details
 router.get('/tracker', auth, async (req, res) => {
   try {
     const db = await dbReady;
@@ -142,7 +142,7 @@ router.get('/tracker', auth, async (req, res) => {
 });
 
 
-// POST /api/progress — Record weekly progress (admin only)
+// POST /api/progress - Record weekly progress (admin only)
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
     const db = await dbReady;
@@ -163,7 +163,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
   }
 });
 
-// PUT /api/progress/:id — Update a progress entry (admin only)
+// PUT /api/progress/:id - Update a progress entry (admin only)
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
     const db = await dbReady;
@@ -182,7 +182,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
   }
 });
 
-// PUT /api/progress/toggle/:userId/:weekNumber — Quick toggle (admin only)
+// PUT /api/progress/toggle/:userId/:weekNumber - Quick toggle (admin only)
 router.put('/toggle/:userId/:weekNumber', auth, adminOnly, async (req, res) => {
   try {
     const db = await dbReady;
@@ -206,7 +206,7 @@ router.put('/toggle/:userId/:weekNumber', auth, adminOnly, async (req, res) => {
   }
 });
 
-// DELETE /api/progress/:id — Delete entry (admin only)
+// DELETE /api/progress/:id - Delete entry (admin only)
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const db = await dbReady;

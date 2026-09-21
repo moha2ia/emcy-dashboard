@@ -1,5 +1,5 @@
 /**
- * Simple request logger — every API call is printed with method, path,
+ * Simple request logger - every API call is printed with method, path,
  * status and duration. Makes bugs like "who deleted my data" debuggable.
  */
 function requestLogger(req, res, next) {

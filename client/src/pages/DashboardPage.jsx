@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const [expandedTask, setExpandedTask] = useState(null);
 
   const refreshData = async () => {
-    // Silent refresh used after mutations — no loading spinners
+    // Silent refresh used after mutations - no loading spinners
     try {
       const [statsRes, tasksRes] = await Promise.all([getStats(), getTasks()]);
       setStats(statsRes.data.stats);
@@ -94,7 +94,7 @@ export default function DashboardPage() {
     fetchAll();
   }, [user?.id, user?.role]);
 
-  // ─── Member: File upload ───────────────────────────────────────────────────
+  // Member: File upload
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -112,7 +112,7 @@ export default function DashboardPage() {
     }
   };
 
-  // ─── Member: Complete task ─────────────────────────────────────────────────
+  // Member: Complete task
   const handleCompleteTask = async (taskId) => {
     setSubmitting(true);
     try {
@@ -129,7 +129,7 @@ export default function DashboardPage() {
     }
   };
 
-  // ─── Admin: File upload for task creation ──────────────────────────────────
+  // Admin: File upload for task creation
   const handleAdminFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -147,7 +147,7 @@ export default function DashboardPage() {
     }
   };
 
-  // ─── Admin: Create task ────────────────────────────────────────────────────
+  // Admin: Create task
   const handleCreateTask = async (e) => {
     e.preventDefault();
     if (!createForm.title.trim()) return showToast('Title is required.', 'error');
@@ -174,7 +174,7 @@ export default function DashboardPage() {
     }
   };
 
-  // ─── Admin: Delete task ────────────────────────────────────────────────────
+  // Admin: Delete task
   const handleDeleteTask = async (taskId) => {
     setDeletingId(taskId);
     try {
@@ -188,7 +188,7 @@ export default function DashboardPage() {
     }
   };
 
-  // ─── Admin: Reopen task ────────────────────────────────────────────────────
+  // Admin: Reopen task
   const handleReopenTask = async (taskId) => {
     setReopeningId(taskId);
     try {
@@ -232,7 +232,7 @@ export default function DashboardPage() {
     { label: 'Tasks Done', value: tasks.filter(t => t.status === 'done').length, icon: CheckCircle2, color: '#3d6db5', change: 'Total completed' },
   ];
 
-  // Member's active (pending) task — first one
+  // Member's active (pending) task - first one
   const myPendingTask = !isAdmin ? tasks.find(t => t.status === 'pending') : null;
 
   return (
@@ -288,7 +288,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ─── MEMBER VIEW: Current Task ─────────────────────────────────────── */}
+      {/* MEMBER VIEW: Current Task */}
       {!isAdmin && (
         <div style={{ marginBottom: 32 }}>
           {tasksLoading ? (
@@ -500,7 +500,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ─── ADMIN VIEW: Task Management ───────────────────────────────────── */}
+      {/* ADMIN VIEW: Task Management */}
       {isAdmin && (
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -649,7 +649,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ─── Charts & Recent Activity (Admin) ──────────────────────────────── */}
+      {/* Charts & Recent Activity (Admin) */}
       {isAdmin && (
         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 24, marginBottom: 32 }}>
           {/* Task Completion Chart */}
@@ -790,7 +790,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ─── Create Task Modal (Admin) ──────────────────────────────────────── */}
+      {/* Create Task Modal (Admin) */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
@@ -913,7 +913,7 @@ export default function DashboardPage() {
                 >
                   <option value="all">All Members</option>
                   {members.map(m => (
-                    <option key={m.id} value={m.id}>{m.name} — {m.project}</option>
+                    <option key={m.id} value={m.id}>{m.name} - {m.project}</option>
                   ))}
                 </select>
               </div>

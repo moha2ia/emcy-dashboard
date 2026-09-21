@@ -1,7 +1,7 @@
 /**
  * Single source of truth for EMCY email validation.
  * The same rules apply to every account (admin and member).
- * A mirrored copy lives in client/src/utils/emcyEmail.js — keep the two in sync.
+ * A mirrored copy lives in client/src/utils/emcyEmail.js - keep the two in sync.
  */
 const EMCY_DOMAIN = 'emcy.ma';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -9,7 +9,7 @@ const EMCY_EMAIL_ERROR = 'Only official @emcy.ma email addresses are allowed.';
 
 /**
  * Normalize an email: trim, collapse inner spaces, lowercase.
- * Returns { ok, email } — email is '' when normalization fails.
+ * Returns { ok, email } - email is '' when normalization fails.
  * Note: spaces are only stripped at the EDGES (paste artifacts). A space
  * inside the address is a typo and is rejected by the format check.
  */
@@ -21,7 +21,7 @@ function normalizeEmail(raw) {
 
 /**
  * Validate an EMCY email.
- * Returns { ok, email, error } — email is the normalized value (usable for storage).
+ * Returns { ok, email, error } - email is the normalized value (usable for storage).
  *
  * Rules:
  *  1. must be a syntactically valid email

@@ -15,24 +15,18 @@ server/data/
 # Uploaded files (keep folder placeholders)
 server/uploads/avatars/*
 server/uploads/work/*
+server/uploads/resources/*
 !server/uploads/avatars/.gitkeep
 !server/uploads/work/.gitkeep
+!server/uploads/resources/.gitkeep
 
 # Logs & pid files
 *.log
 *.log.err
-server-pid.txt
-vite-pid.txt
+*-log.txt
+*-pid.txt
 
 # Tooling / local
 .freebuff/
 .DS_Store
 Thumbs.db
-
-# Local documents & logs (not part of the app; member data must not go to git)
-resourses/
-*.pdf
-*.xlsx
-logo emcy v2.png
-server-log.txt
-vite-log.txt

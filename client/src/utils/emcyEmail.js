@@ -1,6 +1,6 @@
 /**
  * Single source of truth for EMCY email validation (client copy).
- * Mirrors server/utils/emcyEmail.js — keep the two in sync.
+ * Mirrors server/utils/emcyEmail.js - keep the two in sync.
  * The backend always re-validates; this gives instant user feedback.
  */
 export const EMCY_DOMAIN = 'emcy.ma';

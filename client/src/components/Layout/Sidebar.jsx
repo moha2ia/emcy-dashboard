@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ClipboardList,
   Crown,
+  FolderOpen,
 } from 'lucide-react';
 import EmcyLogo from '../EmcyLogo';
 import { resolveUrl } from '../../utils/resolveUrl';
@@ -21,11 +22,13 @@ const adminNavItems = [
   { path: '/tracker', icon: CalendarCheck, label: 'Task Tracker' },
   { path: '/members', icon: Users, label: 'Members' },
   { path: '/ranking', icon: Trophy, label: 'Ranking' },
+  { path: '/resources', icon: FolderOpen, label: 'Resources' },
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 
 const memberNavItems = [
   { path: '/task', icon: ClipboardList, label: 'My Task' },
+  { path: '/resources', icon: FolderOpen, label: 'Resources' },
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 

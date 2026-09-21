@@ -1,55 +1,75 @@
 # EMCY Dashboard
 
-Work-tracking dashboard for EMCY — Morocco Cyber Space Youth. React + Vite client, Express API, JSON database.
+Work-tracking dashboard for EMCY (Morocco Cyber Space Youth). Admins create tasks and assign them to members, members report their progress and submit deliverables, and everything shows up on a dashboard with weekly logs and a ranking.
 
-## Development
+React + Vite on the front, Express on the back. Storage is JSON files in dev and Netlify Blobs in production, so there is no external database to set up.
+
+## Features
+
+- Task management: assign tasks with deadlines, members submit work as a file upload or a link
+- Weekly progress tracking with a ranking page
+- Members management with roles (owner / admin / member)
+- Shared resources area for team documents
+- JWT auth, member emails restricted to `@emcy.ma`
+
+## Project structure
+
+```
+├── client/               # React + Vite frontend
+│   ├── public/           # Static assets & logos
+│   └── src/              # Components, pages, context, services
+├── server/               # Express API
+│   ├── config/           # Database, storage driver, backups
+│   ├── middleware/       # Auth, logging
+│   ├── models/           # Data models
+│   ├── routes/           # REST endpoints (auth, tasks, users, ...)
+│   └── scripts/          # Maintenance scripts
+├── netlify/functions/    # Serverless API entry for Netlify deploys
+└── docs/                 # Presentation & supporting docs
+```
+
+## Getting started
 
 ```bash
 cd server && npm install && npm run dev   # API on :5000 (local filesystem store)
 cd client && npm install && npm run dev   # Web on :5173 (proxies /api and /uploads to :5000)
 ```
 
-Server config lives in `server/.env` (see `server/.env.example`). Default owner login: `admin@emcy.com` / `admin123` (dev only — in production the initial password comes from `ADMIN_SEED_PASSWORD`). Dev-only demo members are seeded locally; they never appear in production.
+On Windows, `run.bat` starts both in one click.
+
+Dev login: `admin@emcy.com` / `admin123`. In production the initial password comes from `ADMIN_SEED_PASSWORD` instead, so change it right after the first deploy. Demo members are only seeded in dev.
+
+Server config lives in `server/.env` (see `server/.env.example`).
 
 ## Deploying to Netlify
 
-The app deploys **100% on Netlify**:
-- The React app is built to `client/dist` and served from Netlify's CDN.
-- The Express API runs as a Netlify **function** (`netlify/functions/api`), wired to `/api/*` and `/uploads/*` via redirects in `netlify.toml`.
-- The database, its automatic backups, and all uploaded files live in **Netlify Blobs** (built-in storage — no external service, no account needed). The storage layer (`server/config/store.js`) picks Blobs automatically on Netlify and the local filesystem in dev.
+The whole app runs on Netlify: the React build is served from the CDN and the Express API runs as a serverless function, with the database and uploads in Netlify Blobs (built in, nothing to create). Storage picks Blobs automatically on Netlify and the local filesystem in dev.
 
-### Steps (dashboard UI)
+1. Push this repo to GitHub.
+2. On app.netlify.com, "Add new site > Import an existing project" and pick the repo.
+3. Before the first deploy, set these environment variables under Site configuration:
+   - `JWT_SECRET`, required. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. A fallback is auto-generated if you skip it, but set your own.
+   - `ADMIN_SEED_PASSWORD`, the initial owner password. Without it the owner starts on the well-known `admin123`.
+4. Deploy. `netlify.toml` already has the build command, publish dir and function config.
+5. Check `https://<your-site>.netlify.app/api/health` returns `{"status":"ok","store":"blobs","db":"ready"}`. If it says `degraded`, look at the function logs.
+6. Log in as `admin@emcy.com` and change the password.
 
-1. **Push this repo to GitHub.**
-2. [app.netlify.com](https://app.netlify.com) → **Add new site → Import an existing project → GitHub** → pick this repo.
-3. Netlify reads `netlify.toml` — build command, publish dir, and functions are pre-filled. Just click **Deploy**.
-4. **After the first deploy**, set the environment variables under **Site configuration → Environment variables**:
-   - `ADMIN_SEED_PASSWORD` — the initial owner password (e.g. a strong random string)
-   - `JWT_SECRET` — `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
-   Then **Deploys → Trigger deploy → Clear cache and deploy site** so they take effect.
-5. Open the site URL, log in as `admin@emcy.com` with your `ADMIN_SEED_PASSWORD`, and **change the password right away** (Profile or Members page).
+Every write snapshots a restore point (last 20 kept), so deploys never wipe data, and a corrupted collection is recovered from the newest snapshot. Function request bodies are capped around 6 MB, so larger files should be shared as links instead of uploads.
 
-Netlify Blobs needs no setup: on the first API call, the function provisions the `emcy-db`, `emcy-db-backups`, and `emcy-uploads` stores automatically.
+There is also a `render.yaml` if you prefer Render (single service, filesystem disk).
 
-### Good to know
+## Testing
 
-- **Cold starts:** the first API call after inactivity takes ~1–3 s. Subsequent calls are fast.
-- **Data lives in Blobs**, so deploys never wipe the database or uploads.
-- The live database starts fresh (owner admin only) — recreate team accounts through the Members UI, emails must be `@emcy.ma`.
+The serverless path (Netlify Blobs, function handler, cold starts) has a test harness that runs against a mocked file-backed blobs store:
 
-## Local production-style test
+```bash
+node server/test/function-harness.cjs
+```
+
+To try a production-style local run:
 
 ```bash
 cd client && npm run build
 cd ../server && NODE_ENV=production PORT=8080 ADMIN_SEED_PASSWORD=xxx node server.js
-# http://localhost:8080 serves the app and the API together (filesystem store)
-```
-
-To exercise the Netlify function locally instead:
-
-```bash
-NETLIFY=true EMCY_STORE_DRIVER=fs ADMIN_SEED_PASSWORD=xxx node -e "
-const { handler } = require('./netlify/functions/api');
-handler({ httpMethod: 'GET', path: '/api/health', headers: {} }, {}).then(r => console.log(r.statusCode));
-"
+# http://localhost:8080 serves the app and the API together
 ```

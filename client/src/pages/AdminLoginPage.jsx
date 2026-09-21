@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { login } from '../services/api';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Users } from 'lucide-react';
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,11 +21,11 @@ export default function LoginPage() {
 
     try {
       const res = await login(email, password);
-      if (res.data.user.role === 'admin') {
-        showToast('Admin accounts must use the Admin Portal to sign in.', 'error');
+      if (res.data.user.role !== 'admin') {
+        showToast('This account does not have admin access.', 'error');
         return;
       }
-      showToast('Welcome back! Redirecting to your tasks...', 'success');
+      showToast('Welcome back! Redirecting to admin dashboard...', 'success');
       loginUser(res.data.token, res.data.user);
       setTimeout(() => navigate('/'), 600);
     } catch (err) {
@@ -42,15 +42,15 @@ export default function LoginPage() {
     <div className="login-split">
       <div className="login-split__container">
         {/* Left branding panel */}
-        <div className="login-split__brand login-split__brand--member">
+        <div className="login-split__brand login-split__brand--admin">
           <img
             src="/white-emcy-logo.png"
             alt="EMC Youth"
             className="login-brand__white-logo"
           />
-          <div className="login-brand__title">Team Portal</div>
+          <div className="login-brand__title">Admin Portal</div>
           <div className="login-brand__subtitle">
-            Track your tasks, submit your work, and stay on top of your weekly goals.
+            Management &amp; oversight dashboard - monitor team performance and manage resources.
           </div>
           <div className="login-brand__dots">
             <span /><span /><span />
@@ -59,15 +59,15 @@ export default function LoginPage() {
 
         {/* Right form panel */}
         <div className="login-split__form-side">
-          <div className="login-form__heading">Welcome back</div>
+          <div className="login-form__heading">Admin Portal</div>
           <div className="login-form__subheading">
-            Sign in to your team account
+            Sign in with your administrator credentials
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="login-form__group">
               <input
-                id="login-email"
+                id="admin-login-email"
                 type="email"
                 className="login-form__input"
                 placeholder=" "
@@ -77,14 +77,14 @@ export default function LoginPage() {
                 autoComplete="email"
               />
               <Mail size={18} className="login-form__icon" />
-              <label htmlFor="login-email" className="login-form__label">
-                Email Address
+              <label htmlFor="admin-login-email" className="login-form__label">
+                Admin Email
               </label>
             </div>
 
             <div className="login-form__group">
               <input
-                id="login-password"
+                id="admin-login-password"
                 type={showPassword ? 'text' : 'password'}
                 className="login-form__input"
                 placeholder=" "
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
               <Lock size={18} className="login-form__icon" />
-              <label htmlFor="login-password" className="login-form__label">
+              <label htmlFor="admin-login-password" className="login-form__label">
                 Password
               </label>
               <button
@@ -109,19 +109,19 @@ export default function LoginPage() {
             </div>
 
             <button
-              id="login-submit"
+              id="admin-login-submit"
               type="submit"
-              className="login-form__btn login-form__btn--member"
+              className="login-form__btn login-form__btn--admin"
               disabled={loading}
             >
               {loading ? (
                 <>
                   <div className="login-form__spinner" />
-                  Signing in...
+                  Authenticating...
                 </>
               ) : (
                 <>
-                  Sign In
+                  Sign In as Admin
                   <ArrowRight size={18} />
                 </>
               )}
@@ -132,13 +132,13 @@ export default function LoginPage() {
             <span>or</span>
           </div>
 
-          <Link to="/admin/login" className="login-form__alt-link">
-            <Shield size={14} />
-            Admin Portal
+          <Link to="/login" className="login-form__alt-link login-form__alt-link--admin">
+            <Users size={14} />
+            Team Member Login
           </Link>
 
           <div className="login-form__footer">
-            EMCY Dashboard &copy; {new Date().getFullYear()} &middot; Built for <span>EMC Youth</span>
+            EMCY Dashboard &copy; {new Date().getFullYear()} &middot; <span>Admin Access Only</span>
           </div>
         </div>
       </div>

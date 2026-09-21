@@ -68,4 +68,12 @@ export const uploadTaskFile = (formData) => api.post('/tasks/upload', formData, 
   headers: { 'Content-Type': 'multipart/form-data' }
 });
 
+// Resources
+export const getResources = () => api.get('/resources');
+export const createResource = (data) => api.post('/resources', data);
+export const uploadResource = (formData) => api.post('/resources/upload', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const deleteResource = (id) => api.delete(`/resources/${id}`);
+
 export default api;

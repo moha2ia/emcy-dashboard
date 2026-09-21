@@ -2,7 +2,7 @@
   "name": "emcy-dashboard",
   "version": "1.0.0",
   "private": true,
-  "description": "EMCY Dashboard — monorepo root (Netlify function host). Runtime deps live in server/; this root package exists so netlify/functions can resolve them.",
+  "description": "EMCY Dashboard - monorepo root (Netlify function host). Runtime deps live in server/; this root package exists so netlify/functions can resolve them.",
   "dependencies": {
     "@netlify/blobs": "^7.3.0",
     "bcryptjs": "^2.4.3",

@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
         const cached = JSON.parse(savedUser);
         if (!cancelled) setUser(cached);
       } catch {
-        // Corrupted cache — start clean
+        // Corrupted cache - start clean
         clearStoredAuth();
         if (!cancelled) setLoading(false);
         return;
